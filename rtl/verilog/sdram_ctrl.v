@@ -60,7 +60,9 @@ module sdram_ctrl #(
 	output reg	[15:0]	dat_o,
 	input		[1:0]	sel_i,
 	input			acc_i,
-	output reg		ack_o,
+	input			dv_i,
+	output  		ack_o,
+	output reg		vld_o,
 	input			we_i
 );
 	// Active Command To Read/Write Command Delay Time
@@ -120,7 +122,6 @@ module sdram_ctrl #(
 	reg  [12:0]			a;
 	reg  [BA_WIDTH-1:0]		ba;
 	reg  [4:0]			cmd;
-	reg				we_r;
 	wire [2:0]			bl;
 	wire				a10;
 	wire				a10_oe;
@@ -129,6 +130,13 @@ module sdram_ctrl #(
 	wire [ROW_WIDTH-1:0]		curr_row;
 	wire				curr_row_active;
 
+	wire 				write_ack;
+	reg 				read_ack;
+
+	assign write_ack = (acc_i & curr_row_active & we_i & dv_i) | ((state == ACTIVATE) & (cycle_count >=tRCD-1) & we_i & dv_i);
+   
+	assign ack_o = write_ack | read_ack;
+   
 	assign cs_n_o = 1'b0;
 	assign cke_o  = 1'b1;
 	assign a_o    = a10_oe ? {a[12:11], a10, a[9:0]} : a;
@@ -155,15 +163,15 @@ module sdram_ctrl #(
 			state <= INIT_POWERUP;
 			a <= 0;
 			ba <= 0;
-			ack_o <= 1'b0;
+			read_ack <= 1'b0;
 			cycle_count <= 0;
-			we_r <= 0;
 			bank_active <= 0;
 		end else begin
 			dq_oe_o <= 1'b0;
 			dqm_o <= 2'b11;
 			cmd <= CMD_NOP;
-			ack_o <= 1'b0;
+			read_ack <= 1'b0;
+			vld_o <= 1'b0;
 			refresh_count <= refresh_count + 1;
 			cycle_count <= cycle_count + 1;
 			case (state)
@@ -228,12 +236,13 @@ module sdram_ctrl #(
 					a[9:0] <= adr_i[10:1];
 					adr_o <= adr_i;
 					if (we_i) begin
-						ack_o <= 1'b1;
+					   if (dv_i) begin
 						dqm_o <= ~sel_i;
 						dq_oe_o <= 1'b1;
 						dq_o <= dat_i;
 						cmd <= CMD_WRITE;
 						state <= WRITE;
+					   end
 					end else begin
 						dqm_o <= 2'b00;
 						cmd <= CMD_READ;
@@ -242,12 +251,10 @@ module sdram_ctrl #(
 				end else if (acc_i & curr_bank_active) begin
 					cmd <= CMD_PRE;
 					state <= PRE;
-					we_r <= we_i;
 				end else if (acc_i) begin
 					a <= curr_row;
 					cmd <= CMD_ACT;
 					state <= ACTIVATE;
-					we_r <= we_i;
 				end
 			end
 
@@ -282,13 +289,14 @@ module sdram_ctrl #(
 					a[12:11] <= adr_i[12:11];
 					a[9:0] <= adr_i[10:1];
 					adr_o <= adr_i;
-					if (we_r) begin
-						ack_o <= 1'b1;
+					if (we_i) begin
+					   if (dv_i) begin
 						dq_oe_o <= 1'b1;
 						dq_o <= dat_i;
 						dqm_o <= ~sel_i;
 						cmd <= CMD_WRITE;
 						state <= WRITE;
+					   end
 					end else begin
 						dqm_o <= 2'b00;
 						cmd <= CMD_READ;
@@ -307,12 +315,13 @@ module sdram_ctrl #(
 				end
 
 				if (cycle_count == tCAC) begin
-					ack_o <= 1'b1;
+					read_ack <= 1'b1;
 					adr_o <= adr_i;
 				end
 
 				if (cycle_count >= tCAC) begin
 					dat_o <= dq_i;
+					vld_o <= 1'b1;
 				end
 
 				if (cycle_count > tCAC) begin
@@ -339,12 +348,10 @@ module sdram_ctrl #(
 						next_cycle_count <= tCAC - (cycle_count - (BURST_LENGTH-1));
 						next_state <= READ;
 					end else if (acc_i & curr_bank_active) begin
-						we_r <= we_i;
 						cmd <= CMD_PRE;
 						next_cycle_count <= tCAC - (cycle_count - (BURST_LENGTH-1));
 						next_state <= PRE;
 					end else if (acc_i) begin
-						we_r <= we_i;
 						a <= curr_row;
 						cmd <= CMD_ACT;
 						next_cycle_count <= tCAC - (cycle_count - (BURST_LENGTH-1));
@@ -358,8 +365,8 @@ module sdram_ctrl #(
 					next_state <= IDLE;
 					if (next_state == IDLE) begin
 						cycle_count <= 0;
-						if (acc_i & curr_row_active & we_i) begin
-							ack_o <= 1'b1;
+						if (acc_i & curr_row_active & we_i & dv_i) begin
+							read_ack <= 1'b1;
 							ba <= curr_bank;
 							a[12:11] <= adr_i[12:11];
 							a[9:0] <= adr_i[10:1];
@@ -375,11 +382,9 @@ module sdram_ctrl #(
 							dqm_o <= 2'b00;
 							cmd <= CMD_READ;
 						end else if (acc_i & curr_bank_active) begin
-							we_r <= we_i;
 							cmd <= CMD_PRE;
 							state <= PRE;
 						end else if (acc_i) begin
-							we_r <= we_i;
 							a <= curr_row;
 							cmd <= CMD_ACT;
 							state <= ACTIVATE;
@@ -394,8 +399,7 @@ module sdram_ctrl #(
 			WRITE: begin
 				/* TODO: support for burst writes */
 				cycle_count <= 0;
-				if (acc_i & curr_row_active & we_i) begin
-					ack_o <= 1'b1;
+				if (acc_i & curr_row_active & we_i & dv_i) begin
 					ba <= curr_bank;
 					a[12:11] <= adr_i[12:11];
 					a[9:0] <= adr_i[10:1];
@@ -412,11 +416,9 @@ module sdram_ctrl #(
 					cmd <= CMD_READ;
 					state <= READ;
 				end else if (acc_i & curr_bank_active) begin
-					we_r <= we_i;
 					cmd <= CMD_PRE;
 					state <= PRE;
 				end else if (acc_i) begin
-					we_r <= we_i;
 					a <= curr_row;
 					cmd <= CMD_ACT;
 					state <= ACTIVATE;

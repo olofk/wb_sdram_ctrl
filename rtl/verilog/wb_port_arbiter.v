@@ -53,6 +53,8 @@ module wb_port_arbiter #(
 	output [15:0]			dat_o,
 	output [1:0]			sel_o,
 	output				acc_o,
+	output				dv_o,
+	input				vld_i,
 	input				ack_i,
 	output				we_o
 );
@@ -76,6 +78,8 @@ module wb_port_arbiter #(
 	wire [15:0]			p_dat_o[WB_PORTS-1:0];
 	wire [1:0]			p_sel_o[WB_PORTS-1:0];
 	wire [WB_PORTS-1:0]		p_acc_o;
+	wire [WB_PORTS-1:0]		p_dv_o;
+	wire				p_vld_i[WB_PORTS-1:0];
 	wire				p_ack_i[WB_PORTS-1:0];
 	wire				p_we_o[WB_PORTS-1:0];
 
@@ -107,6 +111,7 @@ module wb_port_arbiter #(
 		assign p_adr_i[i] = adr_i;
 		assign p_dat_i[i] = dat_i;
 		assign p_ack_i[i] = ack_i & port_sel[i];
+		assign p_vld_i[i] = vld_i & port_sel[i];
 
 		wb_port #(
 			.TECHNOLOGY	(TECHNOLOGY),
@@ -136,7 +141,9 @@ module wb_port_arbiter #(
 			.dat_o		(p_dat_o[i]),
 			.sel_o		(p_sel_o[i]),
 			.acc_o		(p_acc_o[i]),
+			.dv_o		(p_dv_o[i]),
 			.ack_i		(p_ack_i[i]),
+			.vld_i		(p_vld_i[i]),
 			.we_o		(p_we_o[i]),
 
 			// Buffer write
@@ -152,6 +159,7 @@ module wb_port_arbiter #(
 	assign adr_o = p_adr_o[port_enc];
 	assign dat_o = p_dat_o[port_enc];
 	assign acc_o = p_acc_o[port_enc];
+	assign dv_o  = p_dv_o[port_enc];
 	assign sel_o = p_sel_o[port_enc];
 	assign we_o  = p_we_o[port_enc];
 

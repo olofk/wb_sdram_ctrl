@@ -121,7 +121,7 @@ module wb_sdram_ctrl_tb;
 	 $display("Average wait times");
 	 for(idx=0;idx<WB_PORTS;idx=idx+1)
 	   $display("Master %0d : %f",idx, ack_delay[idx]/num_transactions[idx]);
-	 $display("All tests passed!");
+	 $display("%0d : All tests passed!",$time);
 	 $finish;
 	 
       end

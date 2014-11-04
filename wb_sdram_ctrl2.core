@@ -1,0 +1,32 @@
+CAPI=1
+[main]
+description = "SDRAM controller with multiple wishbone slave ports"
+depend = stream_utils-1.0
+simulators = icarus
+
+[verilog]
+src_files =
+ rtl/verilog/bufram.v
+ rtl/verilog/wb_port_arbiter.v
+ rtl/verilog/dpram_altera.v
+ rtl/verilog/dpram_generic.v
+ rtl/verilog/sdram_ctrl.v
+ rtl/verilog/mem_wr_downsizer.v
+ rtl/verilog/mem_rd_upsizer.v
+ rtl/verilog/wb_port.v
+ rtl/verilog/wb_sdram_ctrl.v
+
+tb_private_src_files =
+ bench/wb_sdram_ctrl_tb.v
+
+[plusargs]
+transactions = int "Number of wishbone transactions"
+[simulator]
+toplevel = wb_sdram_ctrl_tb
+
+[icarus]
+depend = mt48lc16m16a2 vlog_tb_utils wb_bfm
+
+[modelsim]
+depend = vlog_tb_utils wb_bfm 
+vsim_options = -t 1ps

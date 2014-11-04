@@ -77,8 +77,10 @@ module wb_sdram_ctrl #(
 	wire [15:0]		sdram_if_dat_o;
 	wire [1:0]		sdram_if_sel_i;
 	wire			sdram_if_acc;
+	wire			sdram_if_dv;
 	wire			sdram_if_we;
 	wire			sdram_if_ack;
+	wire			sdram_if_vld;
 
 	sdram_ctrl #(
 		.CLK_FREQ_MHZ	(CLK_FREQ_MHZ),
@@ -114,8 +116,10 @@ module wb_sdram_ctrl #(
 		.adr_o		(sdram_if_adr_o),
 		.dat_i		(sdram_if_dat_i),
 		.dat_o		(sdram_if_dat_o),
+		.vld_o		(sdram_if_vld),
 		.sel_i		(sdram_if_sel_i),
 		.acc_i		(sdram_if_acc),
+		.dv_i		(sdram_if_dv),
 		.ack_o		(sdram_if_ack),
 		.we_i		(sdram_if_we)
 	);
@@ -147,9 +151,11 @@ module wb_sdram_ctrl #(
 		.adr_i		(sdram_if_adr_o),
 		.adr_o		(sdram_if_adr_i),
 		.dat_i		(sdram_if_dat_o),
+		.vld_i		(sdram_if_vld),
 		.dat_o		(sdram_if_dat_i),
 		.sel_o		(sdram_if_sel_i),
 		.acc_o		(sdram_if_acc),
+		.dv_o		(sdram_if_dv),
 		.ack_i		(sdram_if_ack),
 		.we_o		(sdram_if_we)
 	);
