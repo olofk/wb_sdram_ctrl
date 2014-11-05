@@ -135,16 +135,18 @@ module wb_port_arbiter #(
 			// Internal interface
 			.sdram_rst	(sdram_rst),
 			.sdram_clk	(sdram_clk),
-			.adr_i		(p_adr_i[i]),
-			.adr_o		(p_adr_o[i]),
-			.dat_i		(p_dat_i[i]),
-			.dat_o		(p_dat_o[i]),
-			.sel_o		(p_sel_o[i]),
-			.acc_o		(p_acc_o[i]),
-			.dv_o		(p_dv_o[i]),
-			.ack_i		(p_ack_i[i]),
-			.vld_i		(p_vld_i[i]),
-			.we_o		(p_we_o[i]),
+			.ca_adr_o	(p_adr_o[i]),
+			.ca_we_o	(p_we_o[i]),
+			.ca_valid_o	(p_acc_o[i]),
+			.ca_ready_i	(p_ack_i[i]),
+
+			.dm_dat_o	(p_dat_o[i]),
+			.dm_sel_o	(p_sel_o[i]),
+			.dm_valid_o	(p_dv_o[i]),
+
+			.r_adr_i	(p_adr_i[i]),
+			.r_dat_i	(p_dat_i[i]),
+			.r_valid_i	(p_vld_i[i]),
 
 			// Buffer write
 			.bufw_adr_i	(p_bufw_adr[i]),

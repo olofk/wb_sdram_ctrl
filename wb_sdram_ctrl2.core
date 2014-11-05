@@ -11,6 +11,7 @@ src_files =
  rtl/verilog/dpram_altera.v
  rtl/verilog/dpram_generic.v
  rtl/verilog/sdram_ctrl.v
+ rtl/verilog/mem_wb_if.v
  rtl/verilog/mem_wr_downsizer.v
  rtl/verilog/mem_rd_upsizer.v
  rtl/verilog/wb_port.v
